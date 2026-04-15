@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MarketView Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css"
@@ -28,7 +34,7 @@
 
       body {
         margin: 0;
-        font-family: "Segoe UI", Arial, sans-serif;
+        font-family: "Montserrat", Arial, sans-serif;
         color: var(--text);
         background:
           radial-gradient(circle at top right, rgba(11, 99, 246, 0.12), transparent 24%),
@@ -60,13 +66,10 @@
 
       .eyebrow {
         display: inline-block;
-        padding: 7px 12px;
-        border-radius: 999px;
-        background: rgba(11, 99, 246, 0.08);
-        color: var(--blue);
+        color: var(--muted);
         font-size: 12px;
         font-weight: 800;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
       }
 
@@ -78,6 +81,15 @@
         margin-top: 16px;
         font-size: 32px;
         line-height: 1.04;
+        letter-spacing: -0.05em;
+      }
+
+      .brand-title .market {
+        color: var(--blue);
+      }
+
+      .brand-title .view {
+        color: var(--text);
       }
 
       .subtitle, .muted {
@@ -189,30 +201,6 @@
         align-items: flex-start;
       }
 
-      .brand-wrap {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-      }
-
-      .brand-logo {
-        width: 74px;
-        height: 74px;
-        border-radius: 20px;
-        background: linear-gradient(145deg, rgba(11, 99, 246, 0.14), rgba(11, 99, 246, 0.02));
-        border: 1px solid rgba(215, 225, 235, 0.9);
-        display: grid;
-        place-items: center;
-        padding: 10px;
-        overflow: hidden;
-      }
-
-      .brand-logo img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-      }
-
       .top-actions {
         display: flex;
         gap: 10px;
@@ -286,6 +274,12 @@
         flex-wrap: wrap;
       }
 
+      .editor-grid {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 16px;
+      }
+
       .banner-grid {
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -320,6 +314,17 @@
       .banner-meta {
         padding: 10px 12px;
         font-size: 13px;
+      }
+
+      .preview-card {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff, #f8fbfe);
+        padding: 12px;
+      }
+
+      .mini-preview {
+        margin-top: 10px;
       }
 
       .cropper-shell {
@@ -358,6 +363,27 @@
       .cropper-stage img {
         display: block;
         max-width: 100%;
+      }
+
+      .cropper-preview-layout {
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: 1fr 240px;
+        gap: 16px;
+      }
+
+      .cropper-preview-box {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        overflow: hidden;
+        background: #f4f8fc;
+        aspect-ratio: 16 / 6;
+      }
+
+      .preview-pane {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
       }
 
       .cropper-actions {
@@ -432,12 +458,17 @@
         background: #f8fbfd;
       }
 
+      .danger-zone {
+        border: 1px solid #ffd7d2;
+        background: #fff7f6;
+      }
+
       @media (max-width: 1150px) {
         .stats, .banner-grid {
           grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
-        .grid-2, .tables {
+        .grid-2, .tables, .editor-grid, .cropper-preview-layout {
           grid-template-columns: 1fr;
         }
       }
@@ -465,18 +496,17 @@
       <div id="loginGate" class="login-wrap">
         <div class="card login-card">
           <span class="eyebrow">MarketView Monitor</span>
-          <h1 class="title">Painel HTML do app</h1>
-          <p class="subtitle">
-            Entre com a conta autorizada para visualizar dados do Firebase e gerenciar os banners da home.
-          </p>
+          <h1 class="title brand-title">
+            <span class="market">Market</span><span class="view">View Monitor</span>
+          </h1>
           <form id="loginForm" class="form">
             <label>
               Usuario
-              <input id="username" type="text" placeholder="fernando_sanga" required />
+              <input id="username" type="text" autocomplete="username" required />
             </label>
             <label>
               Senha
-              <input id="password" type="password" placeholder="102366fer" required />
+              <input id="password" type="password" autocomplete="current-password" required />
             </label>
             <button class="btn-primary" type="submit">Entrar</button>
           </form>
@@ -486,17 +516,11 @@
 
       <div id="dashboard" class="dashboard">
         <div class="topbar">
-          <div class="brand-wrap">
-            <div class="brand-logo">
-              <img src="../assets/images/logo_completo.png" alt="MarketView" />
-            </div>
-            <div>
-              <span class="eyebrow">Controle Administrativo</span>
-              <h1 class="title" style="margin-top: 10px">MarketView Monitor</h1>
-              <p class="subtitle" style="margin-top: 10px">
-                Leitura das colecoes principais do app e controle dos banners remotos.
-              </p>
-            </div>
+          <div>
+            <span class="eyebrow">Controle Administrativo</span>
+            <h1 class="title brand-title" style="margin-top: 10px">
+              <span class="market">Market</span><span class="view">View Monitor</span>
+            </h1>
           </div>
           <div class="top-actions">
             <button id="refreshBtn" class="btn-secondary" type="button">Atualizar</button>
@@ -583,7 +607,13 @@
                 Selecione a imagem
                 <input id="bannerFile" type="file" accept="image/*" />
               </label>
+              <div class="preview-card">
+                <strong>Pre-visualizacao pronta para envio</strong>
+                <p class="cropper-note">O recorte final fica salvo aqui antes do upload.</p>
+                <div id="croppedPreview" class="mini-preview banner-preview">Nenhuma imagem ajustada</div>
+              </div>
               <div class="actions">
+                <button id="openCropperBtn" class="btn-secondary" type="button">Ajustar imagem</button>
                 <button id="uploadBannerBtn" class="btn-primary" type="button">Enviar e substituir</button>
                 <button id="clearBannerBtn" class="btn-secondary" type="button">Limpar slot</button>
               </div>
@@ -593,11 +623,69 @@
           </section>
         </div>
 
-        <div class="tables">
+        <div class="editor-grid">
           <section class="card panel">
-            <div class="section-head"><div><h2>Usuarios recentes</h2><p class="subtitle">Ultimos registros de <code>users</code>.</p></div></div>
+            <div class="section-head"><div><h2>Usuarios recentes</h2><p class="subtitle">Ultimos registros de <code>users</code> com edicao rapida.</p></div></div>
             <div id="usersTable"></div>
           </section>
+          <section class="card panel">
+            <div class="section-head"><div><h2>Editar usuario</h2><p class="subtitle">Selecione um usuario na tabela para editar dados ou excluir a conta.</p></div></div>
+            <div class="form">
+              <label>
+                UID
+                <input id="editorUid" type="text" readonly />
+              </label>
+              <label>
+                Nome de exibicao
+                <input id="editorDisplayName" type="text" />
+              </label>
+              <div class="grid-2" style="grid-template-columns: 1fr 1fr; gap: 12px;">
+                <label>
+                  Primeiro nome
+                  <input id="editorFirstName" type="text" />
+                </label>
+                <label>
+                  Sobrenome
+                  <input id="editorLastName" type="text" />
+                </label>
+              </div>
+              <label>
+                Email
+                <input id="editorEmail" type="email" />
+              </label>
+              <label>
+                Telefone
+                <input id="editorPhone" type="text" />
+              </label>
+              <label>
+                Foto de perfil
+                <input id="editorProfilePhoto" type="text" />
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;font-weight:700;">
+                <input id="editorIsActive" type="checkbox" style="width:18px;height:18px;" />
+                Usuario ativo
+              </label>
+              <div class="actions">
+                <button id="saveUserBtn" class="btn-primary" type="button">Salvar usuario</button>
+                <button id="clearUserEditorBtn" class="btn-secondary" type="button">Limpar editor</button>
+              </div>
+            </div>
+            <div id="userEditorFeedback" class="feedback status hidden"></div>
+            <div class="card panel danger-zone" style="margin-top:16px;">
+              <div class="section-head" style="margin-bottom:10px;">
+                <div>
+                  <h3>Zona de exclusao</h3>
+                  <p class="subtitle">Apaga o documento do usuario selecionado no Firestore.</p>
+                </div>
+              </div>
+              <div class="actions">
+                <button id="deleteUserBtn" class="btn-danger" type="button">Excluir conta selecionada</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="tables">
           <section class="card panel">
             <div class="section-head"><div><h2>Anuncios recentes</h2><p class="subtitle">Ultimos registros de <code>ads</code>.</p></div></div>
             <div id="adsTable"></div>
@@ -623,11 +711,21 @@
         <div class="cropper-stage">
           <img id="cropperImage" alt="Imagem para recorte" />
         </div>
+        <div class="cropper-preview-layout">
+          <div class="preview-card">
+            <strong>Dicas rapidas</strong>
+            <p class="cropper-note">Arraste para reposicionar, use zoom para aproximar e resetar quando quiser voltar ao ponto inicial.</p>
+          </div>
+          <div class="cropper-preview-box">
+            <div class="preview-pane"></div>
+          </div>
+        </div>
         <div class="cropper-actions">
           <div class="actions">
             <button id="zoomOutBtn" class="btn-secondary" type="button">Menos zoom</button>
             <button id="zoomInBtn" class="btn-secondary" type="button">Mais zoom</button>
             <button id="rotateBtn" class="btn-secondary" type="button">Girar</button>
+            <button id="resetCropBtn" class="btn-secondary" type="button">Resetar</button>
           </div>
           <div class="actions">
             <button id="cancelCropBtn" class="btn-danger" type="button">Cancelar</button>
@@ -641,6 +739,7 @@
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
       import {
         collection,
+        deleteDoc,
         doc,
         getCountFromServer,
         getDocs,
@@ -650,6 +749,7 @@
         query,
         serverTimestamp,
         setDoc,
+        updateDoc,
       } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
       import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -681,11 +781,13 @@
       const refreshBtn = document.getElementById("refreshBtn");
       const logoutBtn = document.getElementById("logoutBtn");
       const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+      const openCropperBtn = document.getElementById("openCropperBtn");
       const uploadBannerBtn = document.getElementById("uploadBannerBtn");
       const clearBannerBtn = document.getElementById("clearBannerBtn");
       const settingsFeedback = document.getElementById("settingsFeedback");
       const bannerFeedback = document.getElementById("bannerFeedback");
       const bannerGrid = document.getElementById("bannerGrid");
+      const croppedPreview = document.getElementById("croppedPreview");
 
       const statUsers = document.getElementById("statUsers");
       const statAds = document.getElementById("statAds");
@@ -710,8 +812,21 @@
       const zoomOutBtn = document.getElementById("zoomOutBtn");
       const zoomInBtn = document.getElementById("zoomInBtn");
       const rotateBtn = document.getElementById("rotateBtn");
+      const resetCropBtn = document.getElementById("resetCropBtn");
       const cancelCropBtn = document.getElementById("cancelCropBtn");
       const confirmCropBtn = document.getElementById("confirmCropBtn");
+      const editorUid = document.getElementById("editorUid");
+      const editorDisplayName = document.getElementById("editorDisplayName");
+      const editorFirstName = document.getElementById("editorFirstName");
+      const editorLastName = document.getElementById("editorLastName");
+      const editorEmail = document.getElementById("editorEmail");
+      const editorPhone = document.getElementById("editorPhone");
+      const editorProfilePhoto = document.getElementById("editorProfilePhoto");
+      const editorIsActive = document.getElementById("editorIsActive");
+      const saveUserBtn = document.getElementById("saveUserBtn");
+      const clearUserEditorBtn = document.getElementById("clearUserEditorBtn");
+      const deleteUserBtn = document.getElementById("deleteUserBtn");
+      const userEditorFeedback = document.getElementById("userEditorFeedback");
 
       let currentBannerDoc = {};
       let unsubscribeSettings = null;
@@ -719,6 +834,8 @@
       let cropper = null;
       let pendingBannerFile = null;
       let croppedBannerBlob = null;
+      let croppedPreviewUrl = "";
+      let selectedUserId = "";
 
       function setFeedback(element, text, type) {
         element.className = `feedback ${type}`;
@@ -785,6 +902,32 @@
 
       function createEmpty(message) {
         return `<div class="empty">${escapeHtml(message)}</div>`;
+      }
+
+      function clearUserEditor() {
+        selectedUserId = "";
+        editorUid.value = "";
+        editorDisplayName.value = "";
+        editorFirstName.value = "";
+        editorLastName.value = "";
+        editorEmail.value = "";
+        editorPhone.value = "";
+        editorProfilePhoto.value = "";
+        editorIsActive.checked = true;
+        hideFeedback(userEditorFeedback);
+      }
+
+      function loadUserIntoEditor(user) {
+        selectedUserId = user.id || "";
+        editorUid.value = user.id || "";
+        editorDisplayName.value = user.displayName || "";
+        editorFirstName.value = user.firstName || "";
+        editorLastName.value = user.lastName || "";
+        editorEmail.value = user.email || "";
+        editorPhone.value = user.phone || "";
+        editorProfilePhoto.value = user.profilePhoto || "";
+        editorIsActive.checked = user.isActive !== false;
+        setFeedback(userEditorFeedback, `Usuario ${resolveUserName(user)} carregado no editor.`, "status");
       }
 
       function renderTable(target, columns, rows) {
@@ -881,7 +1024,22 @@
             render: (row) => `<span class="badge ${row.isActive === false ? "off" : "ok"}">${row.isActive === false ? "Inativo" : "Ativo"}</span>`,
           },
           { label: "Criado em", render: (row) => escapeHtml(formatDate(row.createdAt)) },
+          {
+            label: "Acoes",
+            render: (row) => `<button type="button" class="btn-secondary js-edit-user" data-user='${escapeHtml(JSON.stringify(row))}'>Editar</button>`,
+          },
         ], users);
+
+        usersTable.querySelectorAll(".js-edit-user").forEach((button) => {
+          button.addEventListener("click", () => {
+            try {
+              const user = JSON.parse(button.dataset.user);
+              loadUserIntoEditor(user);
+            } catch (error) {
+              console.error("Falha ao carregar usuario no editor", error);
+            }
+          });
+        });
 
         renderTable(adsTable, [
           { label: "Titulo", render: (row) => escapeHtml(row.title ?? "-") },
@@ -918,6 +1076,14 @@
       async function refreshDashboard() {
         setFeedback(globalFeedback, "Atualizando dados do monitor...", "status");
         await Promise.all([refreshCounts(), refreshTables()]);
+        if (usingFileProtocol()) {
+          setFeedback(
+            globalFeedback,
+            "Este monitor foi aberto em file:// e pode nao conseguir conversar com o Firestore no navegador. Use Vercel ou um servidor local simples.",
+            "error",
+          );
+          return;
+        }
         setFeedback(globalFeedback, "Dados atualizados com sucesso.", "success");
       }
 
@@ -931,7 +1097,7 @@
             minAppVersion.value = String(data.minAppVersion ?? "");
           }, (error) => {
             console.error("Erro no listener de global_settings", error);
-            setFeedback(globalFeedback, "Falha ao ler app_config/global_settings. Verifique as rules.", "error");
+            setFeedback(globalFeedback, "Nao foi possivel conversar com o Firestore para ler app_config/global_settings.", "error");
           });
         }
 
@@ -941,7 +1107,7 @@
             renderBannerGrid();
           }, (error) => {
             console.error("Erro no listener de home_banners", error);
-            setFeedback(bannerFeedback, "Falha ao ler app_config/home_banners. Verifique as rules.", "error");
+            setFeedback(bannerFeedback, "Nao foi possivel conversar com o Firestore para ler app_config/home_banners.", "error");
           });
         }
       }
@@ -966,11 +1132,16 @@
           if (cropper) cropper.destroy();
           cropper = new Cropper(cropperImage, {
             aspectRatio: 16 / 6,
-            viewMode: 1,
+            viewMode: 2,
             dragMode: "move",
             autoCropArea: 1,
             responsive: true,
             background: false,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: true,
+            preview: ".preview-pane",
           });
         };
       }
@@ -1074,6 +1245,11 @@
           bannerFile.value = "";
           croppedBannerBlob = null;
           pendingBannerFile = null;
+          if (croppedPreviewUrl) {
+            URL.revokeObjectURL(croppedPreviewUrl);
+            croppedPreviewUrl = "";
+          }
+          croppedPreview.innerHTML = "Nenhuma imagem ajustada";
           setFeedback(bannerFeedback, `Banner ${slot} enviado com sucesso.`, "success");
         } catch (error) {
           console.error("Erro ao atualizar banner", error);
@@ -1085,6 +1261,61 @@
         } finally {
           uploadBannerBtn.disabled = false;
           clearBannerBtn.disabled = false;
+        }
+      }
+
+      async function saveUser() {
+        hideFeedback(userEditorFeedback);
+        if (!selectedUserId) {
+          setFeedback(userEditorFeedback, "Selecione um usuario na tabela antes de salvar.", "error");
+          return;
+        }
+
+        saveUserBtn.disabled = true;
+        try {
+          await updateDoc(doc(db, "users", selectedUserId), {
+            displayName: editorDisplayName.value.trim(),
+            firstName: editorFirstName.value.trim(),
+            lastName: editorLastName.value.trim(),
+            email: editorEmail.value.trim(),
+            phone: editorPhone.value.trim(),
+            profilePhoto: editorProfilePhoto.value.trim(),
+            isActive: editorIsActive.checked,
+            updatedAt: serverTimestamp(),
+            updatedBy: ADMIN_USERNAME,
+          });
+
+          setFeedback(userEditorFeedback, "Usuario atualizado com sucesso.", "success");
+          refreshTables();
+        } catch (error) {
+          console.error("Erro ao salvar usuario", error);
+          setFeedback(userEditorFeedback, "Nao foi possivel salvar o usuario no Firestore.", "error");
+        } finally {
+          saveUserBtn.disabled = false;
+        }
+      }
+
+      async function deleteUser() {
+        hideFeedback(userEditorFeedback);
+        if (!selectedUserId) {
+          setFeedback(userEditorFeedback, "Selecione um usuario antes de excluir.", "error");
+          return;
+        }
+
+        const confirmed = window.confirm("Tem certeza que deseja excluir o documento desse usuario?");
+        if (!confirmed) return;
+
+        deleteUserBtn.disabled = true;
+        try {
+          await deleteDoc(doc(db, "users", selectedUserId));
+          setFeedback(userEditorFeedback, "Conta excluida com sucesso.", "success");
+          clearUserEditor();
+          refreshDashboard();
+        } catch (error) {
+          console.error("Erro ao excluir usuario", error);
+          setFeedback(userEditorFeedback, "Nao foi possivel excluir o usuario.", "error");
+        } finally {
+          deleteUserBtn.disabled = false;
         }
       }
 
@@ -1123,21 +1354,37 @@
       refreshBtn.addEventListener("click", refreshDashboard);
       logoutBtn.addEventListener("click", handleLogout);
       saveSettingsBtn.addEventListener("click", saveSettings);
+      openCropperBtn.addEventListener("click", () => {
+        const file = bannerFile.files?.[0] || pendingBannerFile;
+        if (!file) {
+          setFeedback(bannerFeedback, "Escolha uma imagem antes de abrir o ajuste.", "error");
+          return;
+        }
+        openCropper(file);
+      });
       uploadBannerBtn.addEventListener("click", () => updateBannerSlot("upload"));
       clearBannerBtn.addEventListener("click", () => updateBannerSlot("clear"));
+      saveUserBtn.addEventListener("click", saveUser);
+      clearUserEditorBtn.addEventListener("click", clearUserEditor);
+      deleteUserBtn.addEventListener("click", deleteUser);
       bannerFile.addEventListener("change", () => {
         const file = bannerFile.files?.[0];
         if (file) {
+          pendingBannerFile = file;
+          croppedBannerBlob = null;
+          if (croppedPreviewUrl) {
+            URL.revokeObjectURL(croppedPreviewUrl);
+            croppedPreviewUrl = "";
+          }
+          croppedPreview.innerHTML = "Imagem carregada. Clique em ajustar imagem.";
           openCropper(file);
         }
       });
       zoomOutBtn.addEventListener("click", () => cropper?.zoom(-0.1));
       zoomInBtn.addEventListener("click", () => cropper?.zoom(0.1));
       rotateBtn.addEventListener("click", () => cropper?.rotate(90));
+      resetCropBtn.addEventListener("click", () => cropper?.reset());
       cancelCropBtn.addEventListener("click", () => {
-        bannerFile.value = "";
-        pendingBannerFile = null;
-        croppedBannerBlob = null;
         destroyCropper();
       });
       confirmCropBtn.addEventListener("click", () => {
@@ -1153,6 +1400,11 @@
             return;
           }
           croppedBannerBlob = blob;
+          if (croppedPreviewUrl) {
+            URL.revokeObjectURL(croppedPreviewUrl);
+          }
+          croppedPreviewUrl = URL.createObjectURL(blob);
+          croppedPreview.innerHTML = `<img src="${croppedPreviewUrl}" alt="Preview do banner" />`;
           destroyCropper();
           setFeedback(bannerFeedback, "Imagem ajustada. Agora clique em enviar e substituir.", "status");
         }, "image/png", 0.92);
@@ -1165,14 +1417,7 @@
       } else {
         showLogin();
       }
-
-      if (usingFileProtocol()) {
-        setFeedback(
-          globalFeedback,
-          "Este monitor foi aberto por arquivo local (file://). Assim ele pode nao conseguir conversar com o Firestore no navegador. O ideal e abrir por um servidor local simples ou publicar na Vercel.",
-          "error",
-        );
-      }
+      clearUserEditor();
     </script>
   </body>
 </html>
