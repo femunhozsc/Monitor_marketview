@@ -280,6 +280,75 @@
         gap: 16px;
       }
 
+      .stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .list-shell {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: #fff;
+        max-height: 520px;
+        overflow: auto;
+      }
+
+      .list-item {
+        width: 100%;
+        border: none;
+        border-bottom: 1px solid var(--line);
+        background: transparent;
+        text-align: left;
+        padding: 14px 16px;
+        border-radius: 0;
+        display: grid;
+        gap: 4px;
+      }
+
+      .list-item:last-child {
+        border-bottom: none;
+      }
+
+      .list-item.active {
+        background: #edf4ff;
+      }
+
+      .list-item small {
+        color: var(--muted);
+      }
+
+      .inline-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .ad-photo-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .ad-photo {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        overflow: hidden;
+        background: #fff;
+      }
+
+      .ad-photo img {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        display: block;
+      }
+
+      .ad-photo-meta {
+        padding: 8px 10px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
       .banner-grid {
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -471,6 +540,10 @@
         .grid-2, .tables, .editor-grid, .cropper-preview-layout {
           grid-template-columns: 1fr;
         }
+
+        .ad-photo-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
       }
 
       @media (max-width: 760px) {
@@ -625,8 +698,11 @@
 
         <div class="editor-grid">
           <section class="card panel">
-            <div class="section-head"><div><h2>Usuarios recentes</h2><p class="subtitle">Ultimos registros de <code>users</code> com edicao rapida.</p></div></div>
-            <div id="usersTable"></div>
+            <div class="section-head"><div><h2>Usuarios</h2><p class="subtitle">Lista completa com busca por nome, email ou UID.</p></div></div>
+            <div class="stack">
+              <input id="userSearch" type="text" placeholder="Buscar usuario pelo nome, email ou UID" />
+              <div id="usersList" class="list-shell"></div>
+            </div>
           </section>
           <section class="card panel">
             <div class="section-head"><div><h2>Editar usuario</h2><p class="subtitle">Selecione um usuario na tabela para editar dados ou excluir a conta.</p></div></div>
@@ -685,11 +761,143 @@
           </section>
         </div>
 
-        <div class="tables">
+        <div class="editor-grid">
           <section class="card panel">
-            <div class="section-head"><div><h2>Anuncios recentes</h2><p class="subtitle">Ultimos registros de <code>ads</code>.</p></div></div>
-            <div id="adsTable"></div>
+            <div class="section-head"><div><h2>Criar conta</h2><p class="subtitle">Crie manualmente um documento de usuario no Firestore.</p></div></div>
+            <div class="form">
+              <label>
+                UID da conta
+                <input id="createUid" type="text" />
+              </label>
+              <label>
+                Nome de exibicao
+                <input id="createDisplayName" type="text" />
+              </label>
+              <div class="inline-grid">
+                <label>
+                  Primeiro nome
+                  <input id="createFirstName" type="text" />
+                </label>
+                <label>
+                  Sobrenome
+                  <input id="createLastName" type="text" />
+                </label>
+              </div>
+              <label>
+                Email
+                <input id="createEmail" type="email" />
+              </label>
+              <label>
+                Telefone
+                <input id="createPhone" type="text" />
+              </label>
+              <label>
+                Foto de perfil
+                <input id="createProfilePhoto" type="text" />
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;font-weight:700;">
+                <input id="createIsActive" type="checkbox" style="width:18px;height:18px;" checked />
+                Usuario ativo
+              </label>
+              <div class="actions">
+                <button id="createUserBtn" class="btn-primary" type="button">Criar conta</button>
+              </div>
+            </div>
+            <div id="createUserFeedback" class="feedback status hidden"></div>
           </section>
+
+          <section class="card panel">
+            <div class="section-head"><div><h2>Anuncios</h2><p class="subtitle">Selecione um anuncio para ver fotos e editar informacoes.</p></div></div>
+            <div class="stack">
+              <input id="adSearch" type="text" placeholder="Buscar anuncio por titulo, vendedor ou ID" />
+              <div id="adsList" class="list-shell"></div>
+            </div>
+          </section>
+        </div>
+
+        <section class="card panel">
+          <div class="section-head"><div><h2>Editar anuncio</h2><p class="subtitle">Clique em um anuncio para editar seus dados e revisar as fotos.</p></div></div>
+          <div class="editor-grid">
+            <div class="stack">
+              <div class="inline-grid">
+                <label>
+                  ID
+                  <input id="adEditorId" type="text" readonly />
+                </label>
+                <label>
+                  Seller ID
+                  <input id="adEditorSellerId" type="text" />
+                </label>
+              </div>
+              <label>
+                Titulo
+                <input id="adEditorTitle" type="text" />
+              </label>
+              <label>
+                Descricao
+                <textarea id="adEditorDescription"></textarea>
+              </label>
+              <div class="inline-grid">
+                <label>
+                  Preco
+                  <input id="adEditorPrice" type="number" step="0.01" />
+                </label>
+                <label>
+                  Categoria
+                  <input id="adEditorCategory" type="text" />
+                </label>
+              </div>
+              <div class="inline-grid">
+                <label>
+                  Tipo
+                  <input id="adEditorType" type="text" />
+                </label>
+                <label>
+                  Intent
+                  <input id="adEditorIntent" type="text" />
+                </label>
+              </div>
+              <div class="inline-grid">
+                <label>
+                  Localizacao
+                  <input id="adEditorLocation" type="text" />
+                </label>
+                <label>
+                  Status
+                  <input id="adEditorStatus" type="text" />
+                </label>
+              </div>
+              <div class="inline-grid">
+                <label>
+                  Nome do vendedor
+                  <input id="adEditorSellerName" type="text" />
+                </label>
+                <label>
+                  Avatar do vendedor
+                  <input id="adEditorSellerAvatar" type="text" />
+                </label>
+              </div>
+              <label style="display:flex;align-items:center;gap:10px;font-weight:700;">
+                <input id="adEditorIsActive" type="checkbox" style="width:18px;height:18px;" />
+                Anuncio ativo
+              </label>
+              <div class="actions">
+                <button id="saveAdBtn" class="btn-primary" type="button">Salvar anuncio</button>
+                <button id="clearAdEditorBtn" class="btn-secondary" type="button">Limpar editor</button>
+              </div>
+              <div id="adEditorFeedback" class="feedback status hidden"></div>
+            </div>
+            <div class="stack">
+              <div class="preview-card">
+                <strong>Fotos do anuncio</strong>
+                <p class="cropper-note">Aqui aparecem as imagens atuais gravadas no documento.</p>
+              </div>
+              <div id="adPhotos" class="ad-photo-grid"></div>
+            </div>
+          </div>
+        </section>
+
+        <div class="tables">
           <section class="card panel">
             <div class="section-head"><div><h2>Lojas recentes</h2><p class="subtitle">Ultimos registros de <code>stores</code>.</p></div></div>
             <div id="storesTable"></div>
@@ -803,8 +1011,10 @@
       const bannerSlot = document.getElementById("bannerSlot");
       const bannerFile = document.getElementById("bannerFile");
 
-      const usersTable = document.getElementById("usersTable");
-      const adsTable = document.getElementById("adsTable");
+      const usersList = document.getElementById("usersList");
+      const userSearch = document.getElementById("userSearch");
+      const adsList = document.getElementById("adsList");
+      const adSearch = document.getElementById("adSearch");
       const storesTable = document.getElementById("storesTable");
       const chatsTable = document.getElementById("chatsTable");
       const cropperShell = document.getElementById("cropperShell");
@@ -827,6 +1037,33 @@
       const clearUserEditorBtn = document.getElementById("clearUserEditorBtn");
       const deleteUserBtn = document.getElementById("deleteUserBtn");
       const userEditorFeedback = document.getElementById("userEditorFeedback");
+      const createUid = document.getElementById("createUid");
+      const createDisplayName = document.getElementById("createDisplayName");
+      const createFirstName = document.getElementById("createFirstName");
+      const createLastName = document.getElementById("createLastName");
+      const createEmail = document.getElementById("createEmail");
+      const createPhone = document.getElementById("createPhone");
+      const createProfilePhoto = document.getElementById("createProfilePhoto");
+      const createIsActive = document.getElementById("createIsActive");
+      const createUserBtn = document.getElementById("createUserBtn");
+      const createUserFeedback = document.getElementById("createUserFeedback");
+      const adEditorId = document.getElementById("adEditorId");
+      const adEditorSellerId = document.getElementById("adEditorSellerId");
+      const adEditorTitle = document.getElementById("adEditorTitle");
+      const adEditorDescription = document.getElementById("adEditorDescription");
+      const adEditorPrice = document.getElementById("adEditorPrice");
+      const adEditorCategory = document.getElementById("adEditorCategory");
+      const adEditorType = document.getElementById("adEditorType");
+      const adEditorIntent = document.getElementById("adEditorIntent");
+      const adEditorLocation = document.getElementById("adEditorLocation");
+      const adEditorStatus = document.getElementById("adEditorStatus");
+      const adEditorSellerName = document.getElementById("adEditorSellerName");
+      const adEditorSellerAvatar = document.getElementById("adEditorSellerAvatar");
+      const adEditorIsActive = document.getElementById("adEditorIsActive");
+      const saveAdBtn = document.getElementById("saveAdBtn");
+      const clearAdEditorBtn = document.getElementById("clearAdEditorBtn");
+      const adEditorFeedback = document.getElementById("adEditorFeedback");
+      const adPhotos = document.getElementById("adPhotos");
 
       let currentBannerDoc = {};
       let unsubscribeSettings = null;
@@ -836,6 +1073,9 @@
       let croppedBannerBlob = null;
       let croppedPreviewUrl = "";
       let selectedUserId = "";
+      let selectedAdId = "";
+      let allUsers = [];
+      let allAds = [];
 
       function setFeedback(element, text, type) {
         element.className = `feedback ${type}`;
@@ -917,6 +1157,18 @@
         hideFeedback(userEditorFeedback);
       }
 
+      function clearCreateUserForm() {
+        createUid.value = "";
+        createDisplayName.value = "";
+        createFirstName.value = "";
+        createLastName.value = "";
+        createEmail.value = "";
+        createPhone.value = "";
+        createProfilePhoto.value = "";
+        createIsActive.checked = true;
+        hideFeedback(createUserFeedback);
+      }
+
       function loadUserIntoEditor(user) {
         selectedUserId = user.id || "";
         editorUid.value = user.id || "";
@@ -928,6 +1180,129 @@
         editorProfilePhoto.value = user.profilePhoto || "";
         editorIsActive.checked = user.isActive !== false;
         setFeedback(userEditorFeedback, `Usuario ${resolveUserName(user)} carregado no editor.`, "status");
+      }
+
+      function clearAdEditor() {
+        selectedAdId = "";
+        adEditorId.value = "";
+        adEditorSellerId.value = "";
+        adEditorTitle.value = "";
+        adEditorDescription.value = "";
+        adEditorPrice.value = "";
+        adEditorCategory.value = "";
+        adEditorType.value = "";
+        adEditorIntent.value = "";
+        adEditorLocation.value = "";
+        adEditorStatus.value = "";
+        adEditorSellerName.value = "";
+        adEditorSellerAvatar.value = "";
+        adEditorIsActive.checked = true;
+        adPhotos.innerHTML = createEmpty("Selecione um anuncio para ver as fotos.");
+        hideFeedback(adEditorFeedback);
+      }
+
+      function loadAdIntoEditor(ad) {
+        selectedAdId = ad.id || "";
+        adEditorId.value = ad.id || "";
+        adEditorSellerId.value = ad.sellerId || "";
+        adEditorTitle.value = ad.title || "";
+        adEditorDescription.value = ad.description || "";
+        adEditorPrice.value = ad.price ?? "";
+        adEditorCategory.value = ad.category || "";
+        adEditorType.value = ad.type || "";
+        adEditorIntent.value = ad.intent || "";
+        adEditorLocation.value = ad.location || "";
+        adEditorStatus.value = ad.status || "";
+        adEditorSellerName.value = ad.sellerName || "";
+        adEditorSellerAvatar.value = ad.sellerAvatar || "";
+        adEditorIsActive.checked = ad.isActive !== false;
+
+        const images = Array.isArray(ad.images) ? ad.images : [];
+        if (!images.length) {
+          adPhotos.innerHTML = createEmpty("Este anuncio nao possui fotos registradas.");
+        } else {
+          adPhotos.innerHTML = images.map((image, index) => `
+            <div class="ad-photo">
+              <img src="${escapeHtml(image)}" alt="Foto ${index + 1}" />
+              <div class="ad-photo-meta">Foto ${index + 1}</div>
+            </div>
+          `).join("");
+        }
+
+        setFeedback(adEditorFeedback, `Anuncio ${ad.title || ad.id} carregado no editor.`, "status");
+      }
+
+      function renderUsersList() {
+        const term = userSearch.value.trim().toLowerCase();
+        const filtered = allUsers.filter((user) => {
+          const haystack = [
+            user.id,
+            resolveUserName(user),
+            user.email,
+            user.phone,
+          ].join(" ").toLowerCase();
+          return haystack.includes(term);
+        });
+
+        if (!filtered.length) {
+          usersList.innerHTML = createEmpty("Nenhum usuario encontrado.");
+          return;
+        }
+
+        usersList.innerHTML = filtered.map((user) => `
+          <button type="button" class="list-item ${selectedUserId === user.id ? "active" : ""}" data-user-id="${escapeHtml(user.id)}">
+            <strong>${escapeHtml(resolveUserName(user))}</strong>
+            <small>${escapeHtml(user.email ?? user.id ?? "-")}</small>
+            <small>${user.isActive === false ? "Inativo" : "Ativo"}</small>
+          </button>
+        `).join("");
+
+        usersList.querySelectorAll("[data-user-id]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const user = allUsers.find((item) => item.id === button.dataset.userId);
+            if (user) {
+              loadUserIntoEditor(user);
+              renderUsersList();
+            }
+          });
+        });
+      }
+
+      function renderAdsList() {
+        const term = adSearch.value.trim().toLowerCase();
+        const filtered = allAds.filter((ad) => {
+          const haystack = [
+            ad.id,
+            ad.title,
+            ad.sellerName,
+            ad.sellerId,
+            ad.category,
+          ].join(" ").toLowerCase();
+          return haystack.includes(term);
+        });
+
+        if (!filtered.length) {
+          adsList.innerHTML = createEmpty("Nenhum anuncio encontrado.");
+          return;
+        }
+
+        adsList.innerHTML = filtered.map((ad) => `
+          <button type="button" class="list-item ${selectedAdId === ad.id ? "active" : ""}" data-ad-id="${escapeHtml(ad.id)}">
+            <strong>${escapeHtml(ad.title || ad.id || "Sem titulo")}</strong>
+            <small>${escapeHtml(ad.sellerName || ad.sellerId || "-")}</small>
+            <small>${escapeHtml(formatCurrency(ad.price))}</small>
+          </button>
+        `).join("");
+
+        adsList.querySelectorAll("[data-ad-id]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const ad = allAds.find((item) => item.id === button.dataset.adId);
+            if (ad) {
+              loadAdIntoEditor(ad);
+              renderAdsList();
+            }
+          });
+        });
       }
 
       function renderTable(target, columns, rows) {
@@ -1010,50 +1385,16 @@
 
       async function refreshTables() {
         const [users, ads, stores, chats] = await Promise.all([
-          fetchRecent("users", "createdAt"),
-          fetchRecent("ads", "createdAt"),
+          fetchRecent("users", "createdAt", 400),
+          fetchRecent("ads", "createdAt", 400),
           fetchRecent("stores", "createdAt"),
           fetchRecent("chats", "lastMessageTime"),
         ]);
 
-        renderTable(usersTable, [
-          { label: "Nome", render: (row) => escapeHtml(resolveUserName(row)) },
-          { label: "Email", render: (row) => escapeHtml(row.email ?? "-") },
-          {
-            label: "Status",
-            render: (row) => `<span class="badge ${row.isActive === false ? "off" : "ok"}">${row.isActive === false ? "Inativo" : "Ativo"}</span>`,
-          },
-          { label: "Criado em", render: (row) => escapeHtml(formatDate(row.createdAt)) },
-          {
-            label: "Acoes",
-            render: (row) => `<button type="button" class="btn-secondary js-edit-user" data-user='${escapeHtml(JSON.stringify(row))}'>Editar</button>`,
-          },
-        ], users);
-
-        usersTable.querySelectorAll(".js-edit-user").forEach((button) => {
-          button.addEventListener("click", () => {
-            try {
-              const user = JSON.parse(button.dataset.user);
-              loadUserIntoEditor(user);
-            } catch (error) {
-              console.error("Falha ao carregar usuario no editor", error);
-            }
-          });
-        });
-
-        renderTable(adsTable, [
-          { label: "Titulo", render: (row) => escapeHtml(row.title ?? "-") },
-          { label: "Vendedor", render: (row) => escapeHtml(row.sellerName ?? row.sellerId ?? "-") },
-          { label: "Preco", render: (row) => escapeHtml(formatCurrency(row.price)) },
-          {
-            label: "Status",
-            render: (row) => {
-              const active = row.isActive !== false;
-              const label = row.status ? String(row.status) : active ? "active" : "suspended";
-              return `<span class="badge ${active ? "ok" : "off"}">${escapeHtml(label)}</span>`;
-            },
-          },
-        ], ads);
+        allUsers = users;
+        allAds = ads;
+        renderUsersList();
+        renderAdsList();
 
         renderTable(storesTable, [
           { label: "Nome", render: (row) => escapeHtml(row.name ?? "-") },
@@ -1319,6 +1660,77 @@
         }
       }
 
+      async function createUser() {
+        hideFeedback(createUserFeedback);
+        const uid = createUid.value.trim();
+        if (!uid) {
+          setFeedback(createUserFeedback, "Informe um UID para criar a conta.", "error");
+          return;
+        }
+
+        createUserBtn.disabled = true;
+        try {
+          await setDoc(doc(db, "users", uid), {
+            uid,
+            displayName: createDisplayName.value.trim(),
+            firstName: createFirstName.value.trim(),
+            lastName: createLastName.value.trim(),
+            email: createEmail.value.trim(),
+            phone: createPhone.value.trim(),
+            profilePhoto: createProfilePhoto.value.trim(),
+            isActive: createIsActive.checked,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            createdBy: ADMIN_USERNAME,
+          }, { merge: true });
+
+          setFeedback(createUserFeedback, "Conta criada com sucesso.", "success");
+          clearCreateUserForm();
+          refreshTables();
+        } catch (error) {
+          console.error("Erro ao criar usuario", error);
+          setFeedback(createUserFeedback, "Nao foi possivel criar a conta.", "error");
+        } finally {
+          createUserBtn.disabled = false;
+        }
+      }
+
+      async function saveAd() {
+        hideFeedback(adEditorFeedback);
+        if (!selectedAdId) {
+          setFeedback(adEditorFeedback, "Selecione um anuncio na lista antes de salvar.", "error");
+          return;
+        }
+
+        saveAdBtn.disabled = true;
+        try {
+          await updateDoc(doc(db, "ads", selectedAdId), {
+            sellerId: adEditorSellerId.value.trim(),
+            title: adEditorTitle.value.trim(),
+            description: adEditorDescription.value.trim(),
+            price: Number(adEditorPrice.value || 0),
+            category: adEditorCategory.value.trim(),
+            type: adEditorType.value.trim(),
+            intent: adEditorIntent.value.trim(),
+            location: adEditorLocation.value.trim(),
+            status: adEditorStatus.value.trim(),
+            sellerName: adEditorSellerName.value.trim(),
+            sellerAvatar: adEditorSellerAvatar.value.trim(),
+            isActive: adEditorIsActive.checked,
+            updatedAt: serverTimestamp(),
+            updatedBy: ADMIN_USERNAME,
+          });
+
+          setFeedback(adEditorFeedback, "Anuncio atualizado com sucesso.", "success");
+          refreshTables();
+        } catch (error) {
+          console.error("Erro ao salvar anuncio", error);
+          setFeedback(adEditorFeedback, "Nao foi possivel salvar o anuncio.", "error");
+        } finally {
+          saveAdBtn.disabled = false;
+        }
+      }
+
       function handleLogin(event) {
         event.preventDefault();
         const username = document.getElementById("username").value.trim();
@@ -1367,6 +1779,11 @@
       saveUserBtn.addEventListener("click", saveUser);
       clearUserEditorBtn.addEventListener("click", clearUserEditor);
       deleteUserBtn.addEventListener("click", deleteUser);
+      createUserBtn.addEventListener("click", createUser);
+      saveAdBtn.addEventListener("click", saveAd);
+      clearAdEditorBtn.addEventListener("click", clearAdEditor);
+      userSearch.addEventListener("input", renderUsersList);
+      adSearch.addEventListener("input", renderAdsList);
       bannerFile.addEventListener("change", () => {
         const file = bannerFile.files?.[0];
         if (file) {
@@ -1418,6 +1835,8 @@
         showLogin();
       }
       clearUserEditor();
+      clearCreateUserForm();
+      clearAdEditor();
     </script>
   </body>
 </html>
