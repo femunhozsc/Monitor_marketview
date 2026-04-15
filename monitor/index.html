@@ -329,6 +329,26 @@
         gap: 10px;
       }
 
+      .ad-media-toolbar {
+        display: grid;
+        gap: 12px;
+      }
+
+      .ad-media-toolbar .actions {
+        align-items: center;
+      }
+
+      .ad-photo-upload-row {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .ad-photo-empty {
+        grid-column: 1 / -1;
+      }
+
       .ad-photo {
         border: 1px solid var(--line);
         border-radius: 16px;
@@ -547,6 +567,10 @@
 
         .ad-photo-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .ad-photo-upload-row {
+          grid-template-columns: 1fr;
         }
       }
 
@@ -894,11 +918,15 @@
             <div class="stack">
               <div class="preview-card">
                 <strong>Fotos do anuncio</strong>
-                <p class="cropper-note">Aqui aparecem as imagens atuais gravadas no documento.</p>
+                <p class="cropper-note">Adicione novas fotos com ajuste antes do upload e remova fotos existentes quando precisar.</p>
               </div>
-              <div class="actions">
-                <input id="adPhotoFile" type="file" accept="image/*" />
-                <button id="addAdPhotoBtn" class="btn-secondary" type="button">Adicionar foto</button>
+              <div class="ad-media-toolbar">
+                <div id="adPhotoPreview" class="mini-preview banner-preview">Nenhuma foto preparada</div>
+                <div class="ad-photo-upload-row">
+                  <input id="adPhotoFile" type="file" accept="image/*" />
+                  <button id="openAdPhotoCropperBtn" class="btn-secondary" type="button">Ajustar foto</button>
+                  <button id="addAdPhotoBtn" class="btn-secondary" type="button">Adicionar foto</button>
+                </div>
               </div>
               <div id="adPhotos" class="ad-photo-grid"></div>
             </div>
@@ -1073,6 +1101,8 @@
       const adEditorFeedback = document.getElementById("adEditorFeedback");
       const adPhotos = document.getElementById("adPhotos");
       const adPhotoFile = document.getElementById("adPhotoFile");
+      const adPhotoPreview = document.getElementById("adPhotoPreview");
+      const openAdPhotoCropperBtn = document.getElementById("openAdPhotoCropperBtn");
       const addAdPhotoBtn = document.getElementById("addAdPhotoBtn");
 
       let currentBannerDoc = {};
@@ -1082,6 +1112,9 @@
       let pendingBannerFile = null;
       let croppedBannerBlob = null;
       let croppedPreviewUrl = "";
+      let croppedAdPhotoBlob = null;
+      let croppedAdPhotoPreviewUrl = "";
+      let cropperMode = "banner";
       let selectedUserId = "";
       let selectedAdId = "";
       let selectedAdData = null;
@@ -1209,6 +1242,13 @@
         adEditorSellerName.value = "";
         adEditorSellerAvatar.value = "";
         adEditorIsActive.checked = true;
+        if (croppedAdPhotoPreviewUrl) {
+          URL.revokeObjectURL(croppedAdPhotoPreviewUrl);
+          croppedAdPhotoPreviewUrl = "";
+        }
+        croppedAdPhotoBlob = null;
+        adPhotoFile.value = "";
+        adPhotoPreview.innerHTML = "Nenhuma foto preparada";
         adPhotos.innerHTML = createEmpty("Selecione um anuncio para ver as fotos.");
         hideFeedback(adEditorFeedback);
       }
@@ -1501,9 +1541,14 @@
         cropperShell.classList.remove("active");
       }
 
-      function openCropper(file) {
+      function openCropper(file, mode = "banner") {
         pendingBannerFile = file;
-        croppedBannerBlob = null;
+        cropperMode = mode;
+        if (mode === "banner") {
+          croppedBannerBlob = null;
+        } else {
+          croppedAdPhotoBlob = null;
+        }
         const objectUrl = URL.createObjectURL(file);
         cropperImage.src = objectUrl;
         cropperShell.classList.add("active");
@@ -1511,7 +1556,7 @@
         cropperImage.onload = () => {
           if (cropper) cropper.destroy();
           cropper = new Cropper(cropperImage, {
-            aspectRatio: 16 / 6,
+            aspectRatio: mode === "banner" ? 16 / 6 : 1,
             viewMode: 2,
             dragMode: "move",
             autoCropArea: 1,
@@ -1813,10 +1858,12 @@
           return;
         }
 
-        const file = adPhotoFile.files?.[0];
-        if (!file) {
-          setFeedback(adEditorFeedback, "Escolha uma imagem para adicionar ao anuncio.", "error");
-          return;
+          const file = croppedAdPhotoBlob
+            ? new File([croppedAdPhotoBlob], `ad-photo-${selectedAdId}.png`, { type: "image/png" })
+            : adPhotoFile.files?.[0];
+          if (!file) {
+            setFeedback(adEditorFeedback, "Escolha uma imagem para adicionar ao anuncio.", "error");
+            return;
         }
 
         addAdPhotoBtn.disabled = true;
@@ -1852,6 +1899,12 @@
           };
 
           adPhotoFile.value = "";
+          if (croppedAdPhotoPreviewUrl) {
+            URL.revokeObjectURL(croppedAdPhotoPreviewUrl);
+            croppedAdPhotoPreviewUrl = "";
+          }
+          croppedAdPhotoBlob = null;
+          adPhotoPreview.innerHTML = "Nenhuma foto preparada";
           setFeedback(adEditorFeedback, "Foto adicionada ao anuncio com sucesso.", "success");
           await refreshTables();
           if (selectedAdData) loadAdIntoEditor(selectedAdData);
@@ -1969,7 +2022,15 @@
           setFeedback(bannerFeedback, "Escolha uma imagem antes de abrir o ajuste.", "error");
           return;
         }
-        openCropper(file);
+        openCropper(file, "banner");
+      });
+      openAdPhotoCropperBtn.addEventListener("click", () => {
+        const file = adPhotoFile.files?.[0];
+        if (!file) {
+          setFeedback(adEditorFeedback, "Escolha uma foto antes de abrir o ajuste.", "error");
+          return;
+        }
+        openCropper(file, "ad-photo");
       });
       uploadBannerBtn.addEventListener("click", () => updateBannerSlot("upload"));
       clearBannerBtn.addEventListener("click", () => updateBannerSlot("clear"));
@@ -1992,8 +2053,18 @@
             croppedPreviewUrl = "";
           }
           croppedPreview.innerHTML = "Imagem carregada. Clique em ajustar imagem.";
-          openCropper(file);
+          openCropper(file, "banner");
         }
+      });
+      adPhotoFile.addEventListener("change", () => {
+        const file = adPhotoFile.files?.[0];
+        if (!file) return;
+        if (croppedAdPhotoPreviewUrl) {
+          URL.revokeObjectURL(croppedAdPhotoPreviewUrl);
+          croppedAdPhotoPreviewUrl = "";
+        }
+        croppedAdPhotoBlob = null;
+        adPhotoPreview.innerHTML = "Foto carregada. Clique em ajustar foto.";
       });
       zoomOutBtn.addEventListener("click", () => cropper?.zoom(-0.1));
       zoomInBtn.addEventListener("click", () => cropper?.zoom(0.1));
@@ -2005,23 +2076,34 @@
       confirmCropBtn.addEventListener("click", () => {
         if (!cropper) return;
         const canvas = cropper.getCroppedCanvas({
-          width: 1600,
-          height: 600,
+          width: cropperMode === "banner" ? 1600 : 1200,
+          height: cropperMode === "banner" ? 600 : 1200,
           imageSmoothingQuality: "high",
         });
         canvas.toBlob((blob) => {
           if (!blob) {
-            setFeedback(bannerFeedback, "Nao foi possivel preparar a imagem recortada.", "error");
+            const targetFeedback = cropperMode === "banner" ? bannerFeedback : adEditorFeedback;
+            setFeedback(targetFeedback, "Nao foi possivel preparar a imagem recortada.", "error");
             return;
           }
-          croppedBannerBlob = blob;
-          if (croppedPreviewUrl) {
-            URL.revokeObjectURL(croppedPreviewUrl);
+          if (cropperMode === "banner") {
+            croppedBannerBlob = blob;
+            if (croppedPreviewUrl) {
+              URL.revokeObjectURL(croppedPreviewUrl);
+            }
+            croppedPreviewUrl = URL.createObjectURL(blob);
+            croppedPreview.innerHTML = `<img src="${croppedPreviewUrl}" alt="Preview do banner" />`;
+            setFeedback(bannerFeedback, "Imagem ajustada. Agora clique em enviar e substituir.", "status");
+          } else {
+            croppedAdPhotoBlob = blob;
+            if (croppedAdPhotoPreviewUrl) {
+              URL.revokeObjectURL(croppedAdPhotoPreviewUrl);
+            }
+            croppedAdPhotoPreviewUrl = URL.createObjectURL(blob);
+            adPhotoPreview.innerHTML = `<img src="${croppedAdPhotoPreviewUrl}" alt="Preview da foto do anuncio" />`;
+            setFeedback(adEditorFeedback, "Foto ajustada. Agora clique em adicionar foto.", "status");
           }
-          croppedPreviewUrl = URL.createObjectURL(blob);
-          croppedPreview.innerHTML = `<img src="${croppedPreviewUrl}" alt="Preview do banner" />`;
           destroyCropper();
-          setFeedback(bannerFeedback, "Imagem ajustada. Agora clique em enviar e substituir.", "status");
         }, "image/png", 0.92);
       });
 
