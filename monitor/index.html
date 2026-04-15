@@ -1084,6 +1084,7 @@
       let croppedPreviewUrl = "";
       let selectedUserId = "";
       let selectedAdId = "";
+      let selectedAdData = null;
       let allUsers = [];
       let allAds = [];
 
@@ -1194,6 +1195,7 @@
 
       function clearAdEditor() {
         selectedAdId = "";
+        selectedAdData = null;
         adEditorId.value = "";
         adEditorSellerId.value = "";
         adEditorTitle.value = "";
@@ -1213,6 +1215,11 @@
 
       function loadAdIntoEditor(ad) {
         selectedAdId = ad.id || "";
+        selectedAdData = {
+          ...ad,
+          images: Array.isArray(ad.images) ? [...ad.images] : [],
+          imagePublicIds: Array.isArray(ad.imagePublicIds) ? [...ad.imagePublicIds] : [],
+        };
         adEditorId.value = ad.id || "";
         adEditorSellerId.value = ad.sellerId || "";
         adEditorTitle.value = ad.title || "";
@@ -1227,8 +1234,8 @@
         adEditorSellerAvatar.value = ad.sellerAvatar || "";
         adEditorIsActive.checked = ad.isActive !== false;
 
-        const images = Array.isArray(ad.images) ? ad.images : [];
-        const imagePublicIds = Array.isArray(ad.imagePublicIds) ? ad.imagePublicIds : [];
+        const images = selectedAdData.images;
+        const imagePublicIds = selectedAdData.imagePublicIds;
         if (!images.length) {
           adPhotos.innerHTML = createEmpty("Este anuncio nao possui fotos registradas.");
         } else {
@@ -1774,9 +1781,26 @@
 
           setFeedback(adEditorFeedback, "Anuncio atualizado com sucesso.", "success");
           refreshTables();
+          if (selectedAdData) {
+            selectedAdData = {
+              ...selectedAdData,
+              sellerId: adEditorSellerId.value.trim(),
+              title: adEditorTitle.value.trim(),
+              description: adEditorDescription.value.trim(),
+              price: Number(adEditorPrice.value || 0),
+              category: adEditorCategory.value.trim(),
+              type: adEditorType.value.trim(),
+              intent: adEditorIntent.value.trim(),
+              location: adEditorLocation.value.trim(),
+              status: adEditorStatus.value.trim(),
+              sellerName: adEditorSellerName.value.trim(),
+              sellerAvatar: adEditorSellerAvatar.value.trim(),
+              isActive: adEditorIsActive.checked,
+            };
+          }
         } catch (error) {
           console.error("Erro ao salvar anuncio", error);
-          setFeedback(adEditorFeedback, "Nao foi possivel salvar o anuncio.", "error");
+          setFeedback(adEditorFeedback, `Nao foi possivel salvar o anuncio. ${error?.message || ""}`.trim(), "error");
         } finally {
           saveAdBtn.disabled = false;
         }
@@ -1805,7 +1829,7 @@
             throw new Error("Cloudinary respondeu sem URL.");
           }
 
-          const currentAd = allAds.find((ad) => ad.id === selectedAdId) || {};
+          const currentAd = selectedAdData || allAds.find((ad) => ad.id === selectedAdId) || {};
           const currentImages = Array.isArray(currentAd.images) ? [...currentAd.images] : [];
           const currentPublicIds = Array.isArray(currentAd.imagePublicIds)
             ? [...currentAd.imagePublicIds]
@@ -1821,14 +1845,19 @@
             updatedBy: ADMIN_USERNAME,
           });
 
+          selectedAdData = {
+            ...currentAd,
+            images: currentImages,
+            imagePublicIds: currentPublicIds,
+          };
+
           adPhotoFile.value = "";
           setFeedback(adEditorFeedback, "Foto adicionada ao anuncio com sucesso.", "success");
           await refreshTables();
-          const refreshedAd = allAds.find((ad) => ad.id === selectedAdId);
-          if (refreshedAd) loadAdIntoEditor(refreshedAd);
+          if (selectedAdData) loadAdIntoEditor(selectedAdData);
         } catch (error) {
           console.error("Erro ao adicionar foto no anuncio", error);
-          setFeedback(adEditorFeedback, "Nao foi possivel adicionar a foto ao anuncio.", "error");
+          setFeedback(adEditorFeedback, `Nao foi possivel adicionar a foto ao anuncio. ${error?.message || ""}`.trim(), "error");
         } finally {
           addAdPhotoBtn.disabled = false;
         }
@@ -1842,7 +1871,7 @@
         if (!confirmed) return;
 
         try {
-          const currentAd = allAds.find((ad) => ad.id === adId);
+          const currentAd = selectedAdData || allAds.find((ad) => ad.id === adId);
           if (!currentAd) {
             setFeedback(adEditorFeedback, "Nao foi possivel localizar o anuncio selecionado.", "error");
             return;
@@ -1852,6 +1881,11 @@
           const currentPublicIds = Array.isArray(currentAd.imagePublicIds)
             ? [...currentAd.imagePublicIds]
             : [];
+
+          if (!Number.isInteger(photoIndex) || photoIndex < 0 || photoIndex >= currentImages.length) {
+            setFeedback(adEditorFeedback, "Indice da foto invalido para remocao.", "error");
+            return;
+          }
 
           currentImages.splice(photoIndex, 1);
           if (currentPublicIds.length > photoIndex) {
@@ -1864,6 +1898,12 @@
             updatedAt: serverTimestamp(),
             updatedBy: ADMIN_USERNAME,
           });
+
+          selectedAdData = {
+            ...currentAd,
+            images: currentImages,
+            imagePublicIds: currentPublicIds,
+          };
 
           if (publicId) {
             try {
@@ -1881,11 +1921,10 @@
 
           setFeedback(adEditorFeedback, "Foto removida do anuncio com sucesso.", "success");
           await refreshTables();
-          const refreshedAd = allAds.find((ad) => ad.id === adId);
-          if (refreshedAd) loadAdIntoEditor(refreshedAd);
+          if (selectedAdData) loadAdIntoEditor(selectedAdData);
         } catch (error) {
           console.error("Erro ao remover foto do anuncio", error);
-          setFeedback(adEditorFeedback, "Nao foi possivel remover a foto do anuncio.", "error");
+          setFeedback(adEditorFeedback, `Nao foi possivel remover a foto do anuncio. ${error?.message || ""}`.trim(), "error");
         }
       }
 
