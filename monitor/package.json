@@ -1,0 +1,13 @@
+{
+  "name": "marketview-monitor",
+  "private": true,
+  "version": "1.0.0",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node -e \"console.log('Deploy this folder with Vercel')\""
+  },
+  "dependencies": {
+    "cloudinary": "^2.5.1",
+    "firebase-admin": "^13.0.2"
+  }
+}

@@ -602,8 +602,8 @@
           </h1>
           <form id="loginForm" class="form">
             <label>
-              Usuario
-              <input id="username" type="text" autocomplete="username" required />
+              Email
+              <input id="username" type="email" autocomplete="username" required />
             </label>
             <label>
               Senha
@@ -982,40 +982,168 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
       import {
-        collection,
-        deleteDoc,
-        doc,
-        getCountFromServer,
-        getDocs,
-        limit,
-        onSnapshot,
-        orderBy,
-        query,
-        serverTimestamp,
-        setDoc,
-        updateDoc,
-      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-      import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        getAuth,
+        onAuthStateChanged,
+        signInWithEmailAndPassword,
+        signOut,
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+      import {
+        ReCaptchaEnterpriseProvider,
+        getToken as getAppCheckToken,
+        initializeAppCheck,
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
 
-      const ADMIN_USERNAME = "fernando_sanga";
-      const ADMIN_PASSWORD = "102366fer";
-      const SESSION_KEY = "marketview_monitor_logged_in";
-      const CLOUDINARY_CLOUD_NAME = "dm40f9nsf";
-      const CLOUDINARY_UPLOAD_PRESET = "marketview_preset";
       const BANNER_SLOTS = [1, 2, 3, 4, 5];
+      const ADMIN_API_URL = "/api/admin";
+      const APP_CHECK_SITE_KEY = "";
+      const SERVER_TIMESTAMP = { __serverTimestamp: true };
 
       const firebaseConfig = {
-        apiKey: "AIzaSyAQzdJFx-Oru_tktWRsJYxdaDn9kaTN1Uc",
-        authDomain: "marketview-by-clearview.firebaseapp.com",
-        projectId: "marketview-by-clearview",
-        storageBucket: "marketview-by-clearview.firebasestorage.app",
-        messagingSenderId: "66611254261",
-        appId: "1:66611254261:web:b94a2085a5ad6fd5e346bc",
-        measurementId: "G-9CQE1SG5GN",
+        apiKey: "AIzaSyBkbKxs_vMDIETFbVSGWUd8wLqrAWftvBs",
+        authDomain: "marketview-monitor.firebaseapp.com",
+        projectId: "marketview-monitor",
+        storageBucket: "marketview-monitor.firebasestorage.app",
+        messagingSenderId: "861455855623",
+        appId: "1:861455855623:web:c6a22f0901f4ed95c7faa2",
       };
 
       const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
+      const auth = getAuth(app);
+      const appCheck = APP_CHECK_SITE_KEY
+        ? initializeAppCheck(app, {
+            provider: new ReCaptchaEnterpriseProvider(APP_CHECK_SITE_KEY),
+            isTokenAutoRefreshEnabled: true,
+          })
+        : null;
+      const db = {};
+
+      function currentAdminEmail() {
+        return auth.currentUser?.email || "admin";
+      }
+
+      async function apiFetch(action, payload = {}) {
+        const user = auth.currentUser;
+        if (!user) {
+          throw new Error("Sessao expirada. Entre novamente.");
+        }
+
+        const token = await user.getIdToken();
+        const appCheckToken = appCheck
+          ? (await getAppCheckToken(appCheck)).token
+          : "";
+        const headers = {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        };
+        if (appCheckToken) {
+          headers["X-Firebase-AppCheck"] = appCheckToken;
+        }
+
+        const response = await fetch(ADMIN_API_URL, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ action, ...payload }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.error || "Falha na API administrativa.");
+        }
+        return data;
+      }
+
+      function collection(_db, name) {
+        return { path: name };
+      }
+
+      function doc(_db, ...segments) {
+        return { path: segments.join("/") };
+      }
+
+      function orderBy(field, direction = "asc") {
+        return { type: "orderBy", field, direction };
+      }
+
+      function limit(amount) {
+        return { type: "limit", amount };
+      }
+
+      function query(base, ...constraints) {
+        const resolved = { path: base.path };
+        for (const constraint of constraints) {
+          if (constraint.type === "orderBy") {
+            resolved.orderBy = {
+              field: constraint.field,
+              direction: constraint.direction,
+            };
+          }
+          if (constraint.type === "limit") {
+            resolved.limit = constraint.amount;
+          }
+        }
+        return resolved;
+      }
+
+      function serverTimestamp() {
+        return SERVER_TIMESTAMP;
+      }
+
+      async function getCountFromServer(ref) {
+        const data = await apiFetch("count", { path: ref.path });
+        return { data: () => ({ count: data.count }) };
+      }
+
+      async function getDocs(ref) {
+        const data = await apiFetch("getDocs", {
+          path: ref.path,
+          orderBy: ref.orderBy,
+          limit: ref.limit,
+        });
+        return {
+          docs: data.docs.map((item) => ({
+            id: item.id,
+            data: () => item.data,
+          })),
+        };
+      }
+
+      async function setDoc(ref, data, options = {}) {
+        return apiFetch("setDoc", {
+          path: ref.path,
+          data,
+          merge: options.merge !== false,
+        });
+      }
+
+      async function updateDoc(ref, data) {
+        return apiFetch("updateDoc", {
+          path: ref.path,
+          data,
+        });
+      }
+
+      async function deleteDoc(ref) {
+        return apiFetch("deleteDoc", { path: ref.path });
+      }
+
+      function onSnapshot(ref, next, error) {
+        let stopped = false;
+        const load = async () => {
+          try {
+            const data = await apiFetch("getDoc", { path: ref.path });
+            if (!stopped) {
+              next({ data: () => data.data || {} });
+            }
+          } catch (snapshotError) {
+            if (!stopped && error) error(snapshotError);
+          }
+        };
+        load();
+        const interval = window.setInterval(load, 30000);
+        return () => {
+          stopped = true;
+          window.clearInterval(interval);
+        };
+      }
 
       const loginGate = document.getElementById("loginGate");
       const dashboard = document.getElementById("dashboard");
@@ -1132,7 +1260,7 @@
       }
 
       function isLoggedIn() {
-        return sessionStorage.getItem(SESSION_KEY) === "true";
+        return auth.currentUser != null;
       }
 
       function showDashboard() {
@@ -1581,7 +1709,7 @@
             welcomeMessage: welcomeMessage.value.trim(),
             minAppVersion: minAppVersion.value.trim(),
             updatedAt: serverTimestamp(),
-            updatedBy: ADMIN_USERNAME,
+            updatedBy: currentAdminEmail(),
           }, { merge: true });
 
           setFeedback(settingsFeedback, "Configuracoes salvas com sucesso.", "success");
@@ -1593,13 +1721,16 @@
         }
       }
 
-      async function uploadToCloudinary(file, slot) {
+      async function uploadSignedCloudinaryFile(file, folder) {
+        const signedUpload = await apiFetch("signCloudinaryUpload", { folder });
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-        formData.append("folder", `monitor/banners/banner-${slot}`);
+        formData.append("folder", signedUpload.folder);
+        formData.append("timestamp", signedUpload.timestamp);
+        formData.append("api_key", signedUpload.apiKey);
+        formData.append("signature", signedUpload.signature);
 
-        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${signedUpload.cloudName}/image/upload`, {
           method: "POST",
           body: formData,
         });
@@ -1612,23 +1743,12 @@
         return response.json();
       }
 
+      async function uploadToCloudinary(file, slot) {
+        return uploadSignedCloudinaryFile(file, `monitor/banners/banner-${slot}`);
+      }
+
       async function uploadFileToCloudinary(file, folder) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-        formData.append("folder", folder);
-
-        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`Cloudinary ${response.status}: ${text}`);
-        }
-
-        return response.json();
+        return uploadSignedCloudinaryFile(file, folder);
       }
 
       async function updateBannerSlot(mode) {
@@ -1643,7 +1763,7 @@
               [`banner${slot}Url`]: "",
               [`banner${slot}UpdatedAt`]: serverTimestamp(),
               updatedAt: serverTimestamp(),
-              updatedBy: ADMIN_USERNAME,
+              updatedBy: currentAdminEmail(),
               banners: {
                 [slot]: {
                   imageUrl: "",
@@ -1676,7 +1796,7 @@
             [`banner${slot}Url`]: imageUrl,
             [`banner${slot}UpdatedAt`]: serverTimestamp(),
             updatedAt: serverTimestamp(),
-            updatedBy: ADMIN_USERNAME,
+            updatedBy: currentAdminEmail(),
             banners: {
               [slot]: {
                 imageUrl,
@@ -1697,9 +1817,12 @@
           setFeedback(bannerFeedback, `Banner ${slot} enviado com sucesso.`, "success");
         } catch (error) {
           console.error("Erro ao atualizar banner", error);
+          const message = error?.message
+            ? `Nao foi possivel atualizar o banner: ${error.message}`
+            : "Nao foi possivel atualizar o banner.";
           setFeedback(
             bannerFeedback,
-            "Nao foi possivel atualizar o banner. Confira rules do Firestore e preset do Cloudinary.",
+            message,
             "error",
           );
         } finally {
@@ -1726,7 +1849,7 @@
             profilePhoto: editorProfilePhoto.value.trim(),
             isActive: editorIsActive.checked,
             updatedAt: serverTimestamp(),
-            updatedBy: ADMIN_USERNAME,
+            updatedBy: currentAdminEmail(),
           });
 
           setFeedback(userEditorFeedback, "Usuario atualizado com sucesso.", "success");
@@ -1784,7 +1907,7 @@
             isActive: createIsActive.checked,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
-            createdBy: ADMIN_USERNAME,
+            createdBy: currentAdminEmail(),
           }, { merge: true });
 
           setFeedback(createUserFeedback, "Conta criada com sucesso.", "success");
@@ -1821,7 +1944,7 @@
             sellerAvatar: adEditorSellerAvatar.value.trim(),
             isActive: adEditorIsActive.checked,
             updatedAt: serverTimestamp(),
-            updatedBy: ADMIN_USERNAME,
+            updatedBy: currentAdminEmail(),
           });
 
           setFeedback(adEditorFeedback, "Anuncio atualizado com sucesso.", "success");
@@ -1889,7 +2012,7 @@
             images: currentImages,
             imagePublicIds: currentPublicIds,
             updatedAt: serverTimestamp(),
-            updatedBy: ADMIN_USERNAME,
+            updatedBy: currentAdminEmail(),
           });
 
           selectedAdData = {
@@ -1949,7 +2072,7 @@
             images: currentImages,
             imagePublicIds: currentPublicIds,
             updatedAt: serverTimestamp(),
-            updatedBy: ADMIN_USERNAME,
+            updatedBy: currentAdminEmail(),
           });
 
           selectedAdData = {
@@ -1960,13 +2083,7 @@
 
           if (publicId) {
             try {
-              const deleteFormData = new FormData();
-              deleteFormData.append("public_id", publicId);
-              deleteFormData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-              await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/destroy`, {
-                method: "POST",
-                body: deleteFormData,
-              });
+              await apiFetch("destroyCloudinary", { publicId });
             } catch (cloudinaryError) {
               console.warn("Nao foi possivel apagar a imagem do Cloudinary.", cloudinaryError);
             }
@@ -1981,25 +2098,21 @@
         }
       }
 
-      function handleLogin(event) {
+      async function handleLogin(event) {
         event.preventDefault();
-        const username = document.getElementById("username").value.trim();
+        const email = document.getElementById("username").value.trim();
         const password = document.getElementById("password").value;
 
-        if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
-          setFeedback(loginFeedback, "Usuario ou senha invalidos.", "error");
-          return;
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+          hideFeedback(loginFeedback);
+        } catch (error) {
+          console.error("Erro ao autenticar admin", error);
+          setFeedback(loginFeedback, "Email ou senha invalidos.", "error");
         }
-
-        sessionStorage.setItem(SESSION_KEY, "true");
-        hideFeedback(loginFeedback);
-        showDashboard();
-        startRealtime();
-        refreshDashboard();
       }
 
-      function handleLogout() {
-        sessionStorage.removeItem(SESSION_KEY);
+      async function handleLogout() {
         if (unsubscribeSettings) {
           unsubscribeSettings();
           unsubscribeSettings = null;
@@ -2008,6 +2121,7 @@
           unsubscribeBanners();
           unsubscribeBanners = null;
         }
+        await signOut(auth);
         showLogin();
         setFeedback(globalFeedback, "Sessao encerrada.", "status");
       }
@@ -2107,13 +2221,16 @@
         }, "image/png", 0.92);
       });
 
-      if (isLoggedIn()) {
-        showDashboard();
-        startRealtime();
-        refreshDashboard();
-      } else {
-        showLogin();
-      }
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          showDashboard();
+          startRealtime();
+          refreshDashboard();
+        } else {
+          showLogin();
+        }
+      });
+
       clearUserEditor();
       clearCreateUserForm();
       clearAdEditor();
