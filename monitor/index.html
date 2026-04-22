@@ -1562,6 +1562,7 @@
           ["reviews", statReviews],
           ["review_requests", statRequests],
         ];
+        const failures = [];
 
         await Promise.all(items.map(async ([name, target]) => {
           try {
@@ -1570,8 +1571,13 @@
           } catch (error) {
             console.error(`Falha ao contar ${name}`, error);
             target.textContent = "erro";
+            failures.push(`${name}: ${error?.message || "erro desconhecido"}`);
           }
         }));
+
+        if (failures.length) {
+          throw new Error(failures.join(" | "));
+        }
       }
 
       async function fetchRecent(collectionName, orderField, amount = 8) {
@@ -1585,7 +1591,7 @@
             return snap.docs.map((docItem) => ({ id: docItem.id, ...docItem.data() }));
           } catch (fallbackError) {
             console.error(`Falha ao buscar ${collectionName}`, fallbackError);
-            return [];
+            throw new Error(`${collectionName}: ${fallbackError?.message || "erro desconhecido"}`);
           }
         }
       }
@@ -1623,11 +1629,20 @@
 
       async function refreshDashboard() {
         setFeedback(globalFeedback, "Atualizando dados do monitor...", "status");
-        await Promise.all([refreshCounts(), refreshTables()]);
+        try {
+          await Promise.all([refreshCounts(), refreshTables()]);
+        } catch (error) {
+          setFeedback(
+            globalFeedback,
+            `Nao foi possivel carregar os dados: ${error?.message || "verifique as variaveis do Vercel e os logs da API /api/admin."}`,
+            "error",
+          );
+          return;
+        }
         if (usingFileProtocol()) {
           setFeedback(
             globalFeedback,
-            "Este monitor foi aberto em file:// e pode nao conseguir conversar com o Firestore no navegador. Use Vercel ou um servidor local simples.",
+            "Este monitor foi aberto em file:// e precisa rodar pelo Vercel ou servidor local para chamar /api/admin.",
             "error",
           );
           return;
