@@ -1660,7 +1660,11 @@
             minAppVersion.value = String(data.minAppVersion ?? "");
           }, (error) => {
             console.error("Erro no listener de global_settings", error);
-            setFeedback(globalFeedback, "Nao foi possivel conversar com o Firestore para ler app_config/global_settings.", "error");
+            setFeedback(
+              globalFeedback,
+              `Nao foi possivel ler app_config/global_settings: ${error?.message || "verifique os logs da API /api/admin no Vercel."}`,
+              "error",
+            );
           });
         }
 
@@ -1670,7 +1674,11 @@
             renderBannerGrid();
           }, (error) => {
             console.error("Erro no listener de home_banners", error);
-            setFeedback(bannerFeedback, "Nao foi possivel conversar com o Firestore para ler app_config/home_banners.", "error");
+            setFeedback(
+              bannerFeedback,
+              `Nao foi possivel ler app_config/home_banners: ${error?.message || "verifique os logs da API /api/admin no Vercel."}`,
+              "error",
+            );
           });
         }
       }
